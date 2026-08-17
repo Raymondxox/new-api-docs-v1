@@ -1,43 +1,46 @@
-﻿---
-title: 使用 API
-description: 将平台地址替换 OpenAI 的 base_url，使用平台颁发的令牌作为 api_key，即可开始调用
+---
+title: 使用 API 与游乐场
+description: 使用游乐场验证模型，并通过 OpenAI 兼容接口调用 New API。
 ---
 
-将平台地址替换 OpenAI 的 `base_url`，使用平台颁发的令牌作为 `api_key`，即可开始调用。
+import { Callout } from 'fumadocs-ui/components/callout';
 
-## 操练场在线测试
+## 游乐场
 
-操练场是内置的在线测试工具，无需编写代码即可直接与模型对话，适合快速验证令牌是否可用。
+访问 `/playground`，在左侧选择模型，在输入框发送消息。游乐场使用当前账户可用的模型和额度。
 
-### 访问操练场
+### 发送请求
 
-左侧导航点击「操练场」，或直接访问 `/console/playground`
+1. 选择模型或聊天预设。
+2. 输入消息，按发送按钮提交。
+3. 查看流式回复、工具调用或错误信息。
 
-![操练场页面](/assets/guide/feature-guide/playground.png)
+如果没有可选模型，通常是管理员尚未启用渠道、模型或分组。
 
-### 使用操练场
+## API 地址与认证
 
-1. 在左侧选择要测试的模型
-2. 在底部输入框输入消息内容，点击发送
-3. 右侧对话区域显示模型的回复结果
+网关的 OpenAI 兼容地址通常为：
 
-![操练场对话示例](/assets/guide/feature-guide/playground-chat.png)
+```text
+http://your-host/v1
+```
 
-## 获取 API 地址
+使用 API 密钥作为 Bearer Token：
 
-### 复制 API 地址
+```http
+Authorization: Bearer sk-your-api-key
+```
 
-1. 访问平台首页
-2. 在页面中部找到 API Base URL 显示区域
-3. 点击复制按钮，将地址复制到剪贴板
+以聊天补全为例：
 
-![首页 API 地址复制区域](/assets/guide/feature-guide/api-address.png)
+```bash
+curl http://your-host/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -d '{"model":"gpt-4o-mini","messages":[{"role":"user","content":"你好"}]}'
+```
 
-### 配置客户端
-
-将复制的地址填入你的客户端或代码中作为 `base_url`，配合令牌即可开始调用。
-
-## 代码示例
+## SDK 示例
 
 ### Python（OpenAI SDK）
 
@@ -45,47 +48,25 @@ description: 将平台地址替换 OpenAI 的 base_url，使用平台颁发的�
 from openai import OpenAI
 
 client = OpenAI(
-    api_key="sk-xxxxxxxxxxxxxxxx",  # 平台颁发的令牌
-    base_url="https://your-platform.com/v1"
+    api_key="sk-your-api-key",
+    base_url="http://your-host/v1",
 )
 
 response = client.chat.completions.create(
-    model="gpt-4o",
-    messages=[{"role": "user", "content": "Hello!"}]
+    model="gpt-4o-mini",
+    messages=[{"role": "user", "content": "你好"}],
 )
 print(response.choices[0].message.content)
 ```
 
-### Claude 原生格式
+### Responses、Claude 和 Gemini
 
-```bash
-curl https://your-platform.com/v1/messages \
-  -H "x-api-key: sk-xxxxxxxx" \
-  -H "anthropic-version: 2023-06-01" \
-  -H "content-type: application/json" \
-  -d '{"model": "claude-3-5-sonnet-20241022", "max_tokens": 1024, "messages": [{"role": "user", "content": "Hello"}]}'
-```
+是否可用取决于管理员配置的渠道和模型。调用时使用页面显示的模型名称，不要直接把上游供应商的模型名当作平台模型名。
 
-### Gemini 原生格式
+## 异步接口
 
-```bash
-curl "https://your-platform.com/v1beta/models/gemini-1.5-pro:generateContent?key=sk-xxxxxxxx" \
-  -H "Content-Type: application/json" \
-  -d '{"contents": [{"parts": [{"text": "Hello"}]}]}'
-```
+绘图和部分媒体生成接口会创建异步任务。请求返回任务标识后，到“任务日志”查看状态、进度、结果和错误。
 
-## 支持的接口端点
-
-| 接口 | 路径 | 说明 |
-| --- | --- | --- |
-| 聊天补全 | `POST /v1/chat/completions` | 对话生成，支持流式输出 |
-| 文本补全 | `POST /v1/completions` | 传统补全接口 |
-| 向量嵌入 | `POST /v1/embeddings` | 文本向量化 |
-| 图像生成 | `POST /v1/images/generations` | 文生图 |
-| 图像编辑 | `POST /v1/images/edits` | 图像编辑 |
-| 语音转文字 | `POST /v1/audio/transcriptions` | Whisper 等 |
-| 文字转语音 | `POST /v1/audio/speech` | TTS |
-| 重排序 | `POST /v1/rerank` | 文档重排序 |
-| Responses API | `POST /v1/responses` | OpenAI Responses 格式 |
-| 实时对话 | `GET /v1/realtime`（WebSocket） | OpenAI Realtime API |
-| 模型列表 | `GET /v1/models` | 查询可用模型 |
+<Callout type="info">
+  API 请求的实际计费、模型可用性、速率限制和参数兼容性由管理员的渠道、模型、分组和系统设置共同决定。
+</Callout>

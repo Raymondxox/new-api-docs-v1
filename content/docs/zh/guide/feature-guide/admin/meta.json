@@ -3,16 +3,20 @@
   "defaultOpen": false,
   "pages": [
     "channel",
+    "model",
     "user",
     "redemption",
     "log",
     "subscription",
-    "model",
     "group",
+    "system-info",
     "system-setting",
-    "system-setting-advanced",
-    "custom-oauth",
-    "performance",
-    "docs-config"
+    "settings-site",
+    "settings-auth",
+    "settings-billing",
+    "settings-models",
+    "settings-security",
+    "settings-content",
+    "settings-operations"
   ]
 }

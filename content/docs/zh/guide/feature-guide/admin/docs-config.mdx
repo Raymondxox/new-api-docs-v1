@@ -1,38 +1,23 @@
 ---
-title: 文档与关于页配置
-description: 配置左侧导航的文档链接和关于页内容
+title: 站点与控制台内容
+description: 配置站点信息、导航、公告、API 信息、FAQ 和控制台展示模块。
 ---
 
-import { Callout } from 'fumadocs-ui/components/callout';
+当前版本不再把“文档配置”作为单独的系统设置域。相关能力分布在 Root 的“站点与品牌”和“控制台内容”中。
 
-对于左侧导航栏的「文档」按钮和「关于」页面，Root 均可在系统设置中自定义配置。使用 Root 账号登录后，访问 `/console/setting`。
+## 站点与品牌
 
-## 配置文档链接
+配置站点名称、Logo、页脚、关于页面、首页内容、顶部导航和侧边栏模块。
 
-1. 在系统设置页点击「运营设置」标签页
-2. 找到「文档地址」输入框
+## 控制台内容
 
-![文档地址输入框](/assets/guide/feature-guide/setting-docs-url.png)
+配置公告、API 地址说明、FAQ、Uptime Kuma、聊天预设和绘图功能展示。
 
-3. 在输入框中填写文档网站的完整 URL（如 `https://docs.example.com`）
-4. 点击「保存」
-5. 返回首页，左侧导航栏出现「文档」按钮，点击后跳转到填写的地址
+## 文档链接
 
-![首页左侧导航出现「文档」按钮的效果](/assets/guide/feature-guide/setting-docs-effect.png)
+顶部导航中的外部文档链接属于站点导航配置。修改后请用普通用户和管理员角色检查目标是否可访问。
 
-<Callout type="info">
-  文档地址留空时，左侧导航不会显示「文档」按钮。
-</Callout>
+详细说明：
 
-## 配置关于页
-
-1. 在系统设置页点击「其它设置」标签页
-2. 找到「关于」内容编辑区域
-
-![关于内容编辑区](/assets/guide/feature-guide/setting-about-editor.png)
-
-3. 在文本框中填写 Markdown 格式的内容（支持标题、链接、图片、列表等）
-4. 点击「保存」
-5. 用户点击左侧导航「关于」后将看到配置的内容
-
-![关于页展示效果](/assets/guide/feature-guide/setting-about-effect.png)
+- [站点与品牌设置](./settings-site)
+- [控制台内容设置](./settings-content)

@@ -1,0 +1,26 @@
+---
+title: 身份验证设置
+description: Root 配置密码登录、注册、OAuth、Passkey 和机器人防护。
+---
+
+访问 `/system-settings/auth` 管理身份验证。
+
+## 基础认证
+
+控制密码登录、密码注册、邮箱验证、注册开关、邮箱域名限制和邮箱别名限制。
+
+## OAuth 集成
+
+配置 GitHub、Discord、OIDC、Telegram、LinuxDO 和微信等登录集成。客户端密钥属于敏感信息，保存前应确认回调地址和服务端地址正确。
+
+## Passkey 认证
+
+启用 WebAuthn/Passkey，配置 RP 显示名称、RP ID、允许的 Origin、用户验证策略和设备绑定偏好。
+
+## 机器人防护
+
+配置 Turnstile 站点密钥和密钥，并控制注册或登录流程中的机器人校验。
+
+## 自定义 OAuth
+
+添加符合 OIDC/OAuth 规范的自定义提供商，填写发现地址或授权、令牌和用户信息端点。

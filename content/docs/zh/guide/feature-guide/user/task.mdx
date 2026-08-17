@@ -1,20 +1,23 @@
 ---
-title: 任务管理
-description: 管理 Midjourney 绘图、Suno 音乐生成等异步任务
+title: 异步任务
+description: 查看绘图和其他异步生成任务的进度、结果和错误。
 ---
 
-管理 Midjourney 绘图、Suno 音乐生成等异步任务的状态与结果。左侧导航点击「任务」，或直接访问 `/console/task`。
+import { Callout } from 'fumadocs-ui/components/callout';
 
-![任务列表页](/assets/guide/feature-guide/task-list.png)
+异步接口不会一直保持 HTTP 请求等待。服务端返回任务标识后，任务会在 `/usage-logs/task` 中显示。
 
-任务列表展示所有已提交的异步生成任务，包含任务 ID、类型、状态、提交时间和完成时间。
+## 查看任务
 
-任务状态说明：
+1. 打开控制台侧边栏的“任务日志”。
+2. 在“绘图日志”和“任务日志”之间切换。
+3. 按时间、状态或关键词筛选。
+4. 打开任务查看参数、进度、结果和错误。
 
-| 状态 | 说明 |
-| --- | --- |
-| `PENDING` | 任务已提交，等待处理 |
-| `IN_PROGRESS` | 任务正在生成中 |
-| `SUCCESS` | 任务已完成，可查看结果 |
-| `FAILURE` | 任务生成失败，已自动退还配额 |
+## 任务状态
 
+任务可能经历 `pending`、`running`、`succeeded` 或 `failed`。失败时应先查看详情中的错误，再确认渠道、模型和系统任务是否正常。
+
+<Callout type="info">
+  异步任务的轮询和结算由系统任务处理。Root 可以在“系统信息”中查看相关任务是否正在运行。
+</Callout>

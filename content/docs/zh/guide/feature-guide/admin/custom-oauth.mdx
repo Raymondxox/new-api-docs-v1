@@ -1,22 +1,21 @@
 ---
-title: 自定义 OAuth 提供商
-description: 添加任意符合 OIDC 标准的自定义登录方式
+title: 自定义 OAuth
+description: 配置符合 OAuth/OIDC 规范的自定义登录提供商。
 ---
 
-除内置的 OAuth 提供商外,Root 可以添加任意符合 OIDC 标准的自定义登录方式。使用 Root 账号登录后,进入系统设置页(`/console/setting`),找到「自定义 OAuth」区域。
+自定义 OAuth 现在位于 Root 的“系统设置 → 身份验证 → 自定义 OAuth”，地址为 `/system-settings/auth/custom-oauth`。管理员侧栏中的旧入口已合并到身份验证设置。
 
-![自定义 OAuth 提供商列表](/assets/guide/feature-guide/custom-oauth-list.png)
+## 添加提供商
 
-## 添加自定义 OAuth 提供商
+1. 点击“添加提供商”。
+2. 填写显示名称、客户端 ID 和客户端密钥。
+3. 填写 OIDC Discovery 地址，或分别填写授权、令牌和用户信息端点。
+4. 保存并使用发现或测试功能验证配置。
 
-1. 点击「添加提供商」按钮,弹出配置弹窗
+## 回调地址
 
-![添加自定义 OAuth 弹窗](/assets/guide/feature-guide/custom-oauth-add.png)
+回调地址必须使用当前实例的公开 HTTPS 地址，并与 OAuth 提供商后台登记的地址完全一致。反向代理部署时，确认服务器地址设置和转发头正确。
 
-2. 在「Discovery URL」输入框中填写 OIDC 提供商的 Discovery 地址(通常以 `/.well-known/openid-configuration` 结尾),点击「自动发现」,系统自动填充 Authorization Endpoint、Token Endpoint 等配置
+## 安全要求
 
-![自动发现填充后的配置项](/assets/guide/feature-guide/custom-oauth-filled.png)
-
-3. 填写 Client ID 和 Client Secret(从 OAuth 提供商的应用管理页面获取)
-4. 填写显示名称(用户在登录页看到的按钮文字)
-5. 点击「保存」,配置完成后用户登录页出现该提供商的登录入口
+客户端密钥只保存在服务端；修改提供商后用测试账号验证登录、绑定和解绑流程。

@@ -1,36 +1,55 @@
 ---
 title: 注册与登录
-description: 支持账号密码注册,以及多种第三方 OAuth 一键登录
+description: 支持账号注册、忘记密码重置、账号密码登录以及Passkey和多种第三方 OAuth 一键登录。
 ---
 
-支持账号密码注册,以及多种第三方 OAuth 一键登录。首次使用请先完成注册。
+import { Callout } from 'fumadocs-ui/components/callout';
 
+支持账号注册、忘记密码重置、账号密码登录以及Passkey和多种第三方 OAuth 一键登录，首次使用请先完成注册。
 ## 登录
 
 ### 账号密码登录
 
-1. 打开平台首页,点击右上角「登录」按钮,或直接访问 `/login`
+1. 打开平台首页，点击右上角的「登录」按钮，或直接访问 `/sign-in`。
+2. 在登录页，输入用户名或电子邮件和密码,点击「登录」完成登录。
 
 ![登录页](/assets/guide/feature-guide/login.png)
 
-2. 在登录页输入用户名和密码,点击「登录」完成登录
+### Passkey和第三方 OAuth 登录
 
-### 第三方 OAuth 登录
+登录页会显示平台已启用的 GitHub、Discord、LinuxDO 等第三方平台和Passkey图标。<br />如需使用第三方账号或Passkey登录,点击页面下方对应平台的图标(GitHub、Discord、LinuxDO 等),跳转至第三方授权页面完成授权后自动登录。
 
-如需使用第三方账号登录,点击页面下方对应平台的图标(GitHub、Discord、LinuxDO 等),跳转至第三方授权页面完成授权后自动登录
+![OAuth登录页](/assets/guide/feature-guide/oauth-login.png)
 
-### 忘记密码
-
-忘记密码时,点击登录页的「忘记密码」链接,输入注册邮箱后系统会发送重置链接,点击链接设置新密码,原密码随即失效。
+<Callout type="info">
+  Passkey和第三方OAuth登录方式由平台超级管理员（Root）在「系统设置」 → 「身份验证」中启用。未启用的方式不会出现在登录页。
+</Callout>
 
 ## 注册
 
 ### 注册流程
 
-1. 在登录页点击「注册」链接,或直接访问 `/register`
+1. 在登录页点击「注册」，或直接访问 `/sign-up`。
+2. 填写用户名、密码和要求的邮箱信息(若启用)。
+3. 如启用了邮箱验证或机器人防护，完成验证码和验证挑战。
+4. 点击「注册」完成账号创建。
 
 ![注册页](/assets/guide/feature-guide/register.png)
 
-2. 填写用户名、密码
-3. 填写邮箱地址,点击「发送验证码」,将收到的验证码填入输入框
-4. 点击「注册」完成账号创建,注册成功后自动跳转至首页
+<Callout type="info">
+  是否允许注册、是否要求邮箱验证以及邮箱域名限制由 Root 的身份验证设置决定。
+</Callout>
+
+### 会话限制
+
+如果系统设置限制了同时登录的设备数量，系统会提示撤销其他会话。已登录用户可以点击右上角头像 → 「个人资料」 → 「登录会话」中管理会话。
+
+![登录会话页](/assets/guide/feature-guide/login-session.png)
+
+## 忘记密码重置
+
+1. 在登录页点击「忘记密码」。
+2. 输入注册邮箱并点击「发送重置邮件」提交。
+3. 打开邮件中的重置链接设置新密码。
+
+![忘记密码页](/assets/guide/feature-guide/forgot-password.png)
