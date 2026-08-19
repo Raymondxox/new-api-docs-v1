@@ -7,15 +7,16 @@ import { Callout } from 'fumadocs-ui/components/callout';
 
 ## 游乐场
 
-访问 `/playground`，在左侧选择模型，在输入框发送消息。游乐场使用当前账户可用的模型和额度。
+访问 `/playground`，选择当前账户可用的分组和模型，在输入框发送消息。游乐场使用登录会话调用内部 `/pg/chat/completions`，不需要手动粘贴 API 密钥。
 
 ### 发送请求
 
-1. 选择模型或聊天预设。
-2. 输入消息，按发送按钮提交。
-3. 查看流式回复、工具调用或错误信息。
+1. 选择分组和模型。
+2. 按需启用温度、Top P、最大 Token、频率/存在惩罚和 Seed 等参数。
+3. 输入消息并发送。
+4. 查看流式回复、推理内容、工具调用或错误信息，并可复制、编辑、删除或重新生成消息。
 
-如果没有可选模型，通常是管理员尚未启用渠道、模型或分组。
+如果没有可选模型，请检查当前分组、用户分组权限、可用渠道和模型限制。
 
 ## API 地址与认证
 
@@ -59,13 +60,27 @@ response = client.chat.completions.create(
 print(response.choices[0].message.content)
 ```
 
-### Responses、Claude 和 Gemini
+### 其他协议和端点
 
-是否可用取决于管理员配置的渠道和模型。调用时使用页面显示的模型名称，不要直接把上游供应商的模型名当作平台模型名。
+主站当前还注册了以下接口类别：
+
+- `/v1/responses` 和 `/v1/responses/compact`
+- `/v1/messages`（Claude 格式）
+- `/v1beta/models/*`（Gemini 格式）
+- `/v1/models`、`/v1/models/{model}` 和 `/v1beta/openai/models`（按认证头返回对应协议的模型列表）
+- `/v1/alpha/search`（Codex 独立网页搜索格式）
+- `/v1/images/generations`、`/v1/images/edits`
+- `/v1/audio/transcriptions`、`/v1/audio/translations`、`/v1/audio/speech`
+- `/v1/embeddings`、`/v1/rerank`、`/v1/moderations`
+- `/v1/realtime` WebSocket
+
+是否能成功调用取决于渠道类型、模型、映射和参数兼容性。使用 New API 向用户公开的模型名称，不要直接假设上游模型名可用。
+
+`/v1/images/variations`、文件和旧版 fine-tunes 等路径虽然已注册，但当前明确返回“未实现”，不应视为可用兼容接口。
 
 ## 异步接口
 
-绘图和部分媒体生成接口会创建异步任务。请求返回任务标识后，到“任务日志”查看状态、进度、结果和错误。
+视频、音乐、Midjourney 等接口可能创建异步任务。主站注册了 OpenAI 兼容视频端点、Kling、Jimeng、Suno 和 Midjourney 等路径；只有配置了对应渠道时才可用。请求返回任务标识后，到绘图日志或任务日志查看进度、结果和错误。
 
 <Callout type="info">
   API 请求的实际计费、模型可用性、速率限制和参数兼容性由管理员的渠道、模型、分组和系统设置共同决定。

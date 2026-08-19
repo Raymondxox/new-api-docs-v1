@@ -1,9 +1,25 @@
 ---
 title: 聊天应用集成
-description: 将 New API 的 API 地址和 API 密钥配置到兼容 OpenAI API 的聊天应用。
+description: 手动配置兼容客户端，或使用管理员提供的聊天预设打开网页、桌面协议和浏览器扩展。
 ---
 
+import { Callout } from 'fumadocs-ui/components/callout';
+
 New API 对外提供统一的 API 地址。不同客户端的字段名称可能不同，但通常都需要填写 Base URL、API Key 和模型名称。
+
+## 控制台聊天预设
+
+Root 可以在「系统设置 → 控制台内容 → 聊天」维护预设。预设会出现在侧边栏「聊天」子菜单和 API 密钥行菜单中：
+
+- `http://` 或 `https://` 链接在控制台的 `/chat/{id}` 页面中打开；兼容入口 `/chat2link` 会使用第一个网页预设
+- 自定义协议会交给已安装的桌面应用
+- `fluent` 类型会尝试把密钥发送给 FluentRead 浏览器扩展
+
+预设模板可以使用 `{address}` 和 `{key}`，也支持 Cherry Studio、AionUi、DeepChat 的编码配置占位符。需要密钥的预设会读取用户选中的完整 API 密钥；`/chat2link` 使用第一个已启用密钥，没有可用密钥时会跳转到 `/keys`。
+
+<Callout type="warn">
+  打开带密钥的预设会把完整 API 密钥交给目标网页、应用或扩展。只使用实例管理员确认过的可信预设；怀疑泄露时立即禁用或删除该密钥。
+</Callout>
 
 ## 通用配置
 
@@ -22,11 +38,13 @@ New API 对外提供统一的 API 地址。不同客户端的字段名称可能�
 
 ## 常见客户端
 
-LobeChat、ChatGPT Next Web、OpenCat、AI as Workspace 和 AMA 问天均可使用通用配置；客户端的具体菜单名称以其当前版本为准。
+只要客户端允许自定义 OpenAI 兼容 Base URL、API Key 和模型名称，通常就能接入。LobeChat、ChatGPT Next Web 等客户端的具体菜单名称和路径由客户端版本决定，New API 不保证第三方客户端的所有扩展参数都兼容。
 
 ### 连接失败排查
 
 - 确认 Base URL 没有重复的 `/v1`。
 - 确认 API Key 未过期、未超额且允许当前 IP。
 - 确认模型名称与 New API 中展示的名称完全一致。
+- 如果客户端自动拼接 `/chat/completions`，Base URL 应填写到 `/v1`；如果要求完整端点，则按客户端说明填写。
+- Claude 或 Gemini 原生客户端需要对应协议路径和请求头，不能一律按 OpenAI 配置处理。
 - 查看“使用日志”中的状态码、渠道和错误信息。

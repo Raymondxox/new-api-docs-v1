@@ -5,11 +5,11 @@ description: 查看 API、绘图和异步任务记录，并按条件筛选请求
 
 ## 使用日志
 
-访问 `/usage-logs/common` 查看通用 API 请求日志。普通用户默认只能查看自己的记录；管理员可按权限查看更多记录。
+访问 `/usage-logs/common` 查看通用 API 请求日志。普通用户只能读取自己的记录；Admin 和 Root 可按授权范围查看管理数据。
 
 ### 筛选记录
 
-可按时间范围、模型、状态、请求类型、用户或渠道筛选。点击“展开”查看更多条件，点击“重置”清除筛选。
+可按时间范围、模型、状态、请求类型等条件筛选。用户名、API 密钥名称、渠道等管理维度只会在当前账号有权限时出现。
 
 ### 查看详情
 
@@ -17,12 +17,12 @@ description: 查看 API、绘图和异步任务记录，并按条件筛选请求
 
 ## 绘图和任务日志
 
-访问 `/usage-logs/task`，再切换“绘图日志”或“任务日志”。
+使用日志是路径分区，而不是任务页内的标签：
 
-- `pending`：等待执行
-- `running`：执行中
-- `succeeded`：成功
-- `failed`：失败
+- `/usage-logs/drawing`：Midjourney 等绘图任务
+- `/usage-logs/task`：视频、音乐及其他异步任务
+
+任务状态以页面实际值为准，常见状态包括 `NOT_START`、`SUBMITTED`、`QUEUED`、`IN_PROGRESS`、`SUCCESS`、`FAILURE` 和 `UNKNOWN`。
 
 任务日志用于追踪异步请求，不能用通用日志的成功状态替代任务最终状态。
 

@@ -5,18 +5,18 @@ description: 查看绘图和其他异步生成任务的进度、结果和错误�
 
 import { Callout } from 'fumadocs-ui/components/callout';
 
-异步接口不会一直保持 HTTP 请求等待。服务端返回任务标识后，任务会在 `/usage-logs/task` 中显示。
+视频、音乐等异步接口在提交后返回公开任务标识，后台轮询上游状态并更新任务记录。Midjourney 绘图记录位于 `/usage-logs/drawing`，其他异步任务位于 `/usage-logs/task`。
 
 ## 查看任务
 
 1. 打开控制台侧边栏的“任务日志”。
-2. 在“绘图日志”和“任务日志”之间切换。
-3. 按时间、状态或关键词筛选。
-4. 打开任务查看参数、进度、结果和错误。
+2. 进入「绘图日志」或「任务日志」对应路径。
+3. 按时间、平台、任务 ID、动作或状态筛选。
+4. 查看进度、结果、失败原因，以及任务类型支持的预览或下载操作。
 
 ## 任务状态
 
-任务可能经历 `pending`、`running`、`succeeded` 或 `failed`。失败时应先查看详情中的错误，再确认渠道、模型和系统任务是否正常。
+任务可能经历 `NOT_START`、`SUBMITTED`、`QUEUED`、`IN_PROGRESS`、`SUCCESS`、`FAILURE` 或 `UNKNOWN`。不同上游状态会被映射为这些统一状态；失败时应先查看失败原因，再确认渠道和模型配置。
 
 <Callout type="info">
   异步任务的轮询和结算由系统任务处理。Root 可以在“系统信息”中查看相关任务是否正在运行。
