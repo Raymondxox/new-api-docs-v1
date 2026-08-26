@@ -1,23 +1,52 @@
 ---
 title: 异步任务
-description: 查看绘图和其他异步生成任务的进度、结果和错误。
+description: 管理 Midjourney 绘图、Suno 音乐生成等异步任务
 ---
 
 import { Callout } from 'fumadocs-ui/components/callout';
 
-视频、音乐等异步接口在提交后返回公开任务标识，后台轮询上游状态并更新任务记录。Midjourney 绘图记录位于 `/usage-logs/drawing`，其他异步任务位于 `/usage-logs/task`。
+- 视频、音乐等异步接口在提交后返回公开任务标识，后台轮询上游状态并更新任务记录。
+- Midjourney 绘图记录位于 `/usage-logs/drawing`，其他异步任务位于 `/usage-logs/task`。
 
 ## 查看任务
 
-1. 打开控制台侧边栏的“任务日志”。
-2. 进入「绘图日志」或「任务日志」对应路径。
+1. 点击左侧边栏的「任务日志」。
+2. 可查看「绘图日志」或「任务日志」。
 3. 按时间、平台、任务 ID、动作或状态筛选。
-4. 查看进度、结果、失败原因，以及任务类型支持的预览或下载操作。
+4. 查看进度、结果、失败原因，以及对部分支持的任务类型进行预览或下载操作。
 
 ## 任务状态
 
-任务可能经历 `NOT_START`、`SUBMITTED`、`QUEUED`、`IN_PROGRESS`、`SUCCESS`、`FAILURE` 或 `UNKNOWN`。不同上游状态会被映射为这些统一状态；失败时应先查看失败原因，再确认渠道和模型配置。
+任务状态说明：
+
+| 状态 | 说明 |
+| --- | --- |
+| `PENDING` | 任务已提交，等待处理 |
+| `IN_PROGRESS` | 任务正在生成中 |
+| `SUCCESS` | 任务已完成，可查看结果 |
+| `FAILURE` | 任务生成失败，已自动退还配额 |
 
 <Callout type="info">
-  异步任务的轮询和结算由系统任务处理。Root 可以在“系统信息”中查看相关任务是否正在运行。
+  异步任务的轮询和结算由系统任务处理。Root 可以在「系统信息」中查看相关任务是否正在运行。
 </Callout>
+
+## 异步任务接口
+
+| 接口 | 路径 | 说明 |
+| --- | --- | --- |
+| OpenAI 视频生成 | `POST /v1/videos` | 创建 OpenAI 兼容的视频生成异步任务，成功后返回任务标识。 |
+| OpenAI 视频任务查询 | `GET /v1/videos/{task_id}` | 查询视频生成任务的状态、进度和结果信息。 |
+| 视频内容获取 | `GET /v1/videos/{task_id}/content` | 获取已完成视频的内容或代理下载地址，支持 API Token 或登录会话认证。 |
+| 视频 Remix | `POST /v1/videos/{video_id}/remix` | 基于已有视频提交新的 Remix 异步任务。 |
+| 旧版视频生成 | `POST /v1/video/generations` | 兼容旧版视频生成路径，创建异步视频任务。 |
+| 旧版视频任务查询 | `GET /v1/video/generations/{task_id}` | 查询旧版视频生成任务状态和结果。 |
+| Kling 文生视频 | `POST /kling/v1/videos/text2video` | 使用 Kling 格式提交文本生成视频任务，系统会先执行请求格式转换。 |
+| Kling 图生视频 | `POST /kling/v1/videos/image2video` | 使用 Kling 格式提交图像生成视频任务。 |
+| Kling 任务查询 | `GET /kling/v1/videos/text2video/{task_id}`<br />`GET /kling/v1/videos/image2video/{task_id}` | 查询 Kling 文生视频或图生视频任务结果。 |
+| 即梦官方接口 | `POST /jimeng/` | 兼容即梦官方 API 格式，通过 `Action`、`Version` 等参数区分提交任务和查询操作。 |
+| Suno 任务提交 | `POST /suno/submit/{action}` | 提交 Suno 音乐生成任务，具体任务类型由 `action` 参数决定。 |
+| Suno 任务查询 | `POST /suno/fetch`<br />`GET /suno/fetch/{id}` | 查询 Suno 任务列表或指定任务的状态和结果。 |
+| Midjourney 任务提交 | `POST /mj/submit/{action}`<br />`POST /{mode}/mj/submit/{action}` | 支持 `imagine`、`describe`、`blend`、`change`、`simple-change`、`edits`、`video`、`action`、`modal` 和 `shorten` 等任务操作。 |
+| Midjourney 任务查询 | `GET /mj/task/{id}/fetch`<br />`GET /mj/task/{id}/image-seed`<br />`POST /mj/task/list-by-condition` | 查询任务状态、图像种子或按条件查询任务列表；也支持带 `{mode}` 前缀的路径。 |
+| Midjourney 图片代理 | `GET /mj/image/{id}`<br />`GET /{mode}/mj/image/{id}` | 根据 Midjourney 任务 ID 获取或代理生成的图片。 |
+| Midjourney 扩展操作 | `POST /mj/insight-face/swap`<br />`POST /mj/submit/upload-discord-images` | 提供换脸和上传 Discord 图片等扩展功能。 |

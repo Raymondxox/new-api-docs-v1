@@ -1,22 +1,21 @@
 ---
 title: 使用 API 与游乐场
-description: 使用游乐场验证模型，并通过 OpenAI 兼容接口调用 New API。
+description: 使用游乐场在线测试和体验 AI 模型，并通过 OpenAI 兼容接口调用 New API。
 ---
 
 import { Callout } from 'fumadocs-ui/components/callout';
 
 ## 游乐场
 
-访问 `/playground`，选择当前账户可用的分组和模型，在输入框发送消息。游乐场使用登录会话调用内部 `/pg/chat/completions`，不需要手动粘贴 API 密钥。
+- 游乐场用于在线简单测试和体验 AI 模型，用户可以输入问题或指令，与模型进行对话并查看生成结果。
+​
+1. 选择分组与模型：在输入框右下方选择可用的模型分组和具体模型，确认本次对话使用的模型。
+2. 设置请求参数：点击参数设置按钮，根据需要启用并调整温度、Top P、频率惩罚、存在惩罚和最大 Tokens 等生成参数。
+3. 填写对话内容：在底部输入框中输入问题、指令或提示词；搜索、上传文件、上传照片，截图、拍照功能暂未实现。
+4. 发送请求：确认模型、参数和输入内容后，点击“发送”按钮提交请求。
+5. 查看回复结果：模型生成完成后，可在对话区域查看返回内容，并继续输入新的问题进行多轮对话。
 
-### 发送请求
-
-1. 选择分组和模型。
-2. 按需启用温度、Top P、最大 Token、频率/存在惩罚和 Seed 等参数。
-3. 输入消息并发送。
-4. 查看流式回复、推理内容、工具调用或错误信息，并可复制、编辑、删除或重新生成消息。
-
-如果没有可选模型，请检查当前分组、用户分组权限、可用渠道和模型限制。
+![游乐场页面](/assets/guide/feature-guide/playground.png)
 
 ## API 地址与认证
 
@@ -49,7 +48,7 @@ curl http://your-host/v1/chat/completions \
 from openai import OpenAI
 
 client = OpenAI(
-    api_key="sk-your-api-key",
+    api_key="sk-xxxxxxxx",
     base_url="http://your-host/v1",
 )
 
@@ -60,28 +59,50 @@ response = client.chat.completions.create(
 print(response.choices[0].message.content)
 ```
 
-### 其他协议和端点
+### Claude 原生格式
 
-主站当前还注册了以下接口类别：
+```bash
+curl https://your-platform.com/v1/messages \
+  -H "x-api-key: sk-xxxxxxxx" \
+  -H "anthropic-version: 2023-06-01" \
+  -H "content-type: application/json" \
+  -d '{"model": "claude-3-5-sonnet-20241022", "max_tokens": 1024, "messages": [{"role": "user", "content": "Hello"}]}'
+```
 
-- `/v1/responses` 和 `/v1/responses/compact`
-- `/v1/messages`（Claude 格式）
-- `/v1beta/models/*`（Gemini 格式）
-- `/v1/models`、`/v1/models/{model}` 和 `/v1beta/openai/models`（按认证头返回对应协议的模型列表）
-- `/v1/alpha/search`（Codex 独立网页搜索格式）
-- `/v1/images/generations`、`/v1/images/edits`
-- `/v1/audio/transcriptions`、`/v1/audio/translations`、`/v1/audio/speech`
-- `/v1/embeddings`、`/v1/rerank`、`/v1/moderations`
-- `/v1/realtime` WebSocket
+### Gemini 原生格式
 
-是否能成功调用取决于渠道类型、模型、映射和参数兼容性。使用 New API 向用户公开的模型名称，不要直接假设上游模型名可用。
+```bash
+curl "https://your-platform.com/v1beta/models/gemini-1.5-pro:generateContent?key=sk-xxxxxxxx" \
+  -H "Content-Type: application/json" \
+  -d '{"contents": [{"parts": [{"text": "Hello"}]}]}'
+```
 
-`/v1/images/variations`、文件和旧版 fine-tunes 等路径虽然已注册，但当前明确返回“未实现”，不应视为可用兼容接口。
+### 支持的接口端点
 
-## 异步接口
+| 接口 | 路径 | 说明 |
+| --- | --- | --- |
+| 聊天补全 | `POST /v1/chat/completions` | OpenAI Chat Completions 兼容接口，要求提供 `model` 和 `messages`，支持流式或普通响应。 |
+| 游乐场聊天 | `POST /pg/chat/completions` | 网页游乐场专用接口，使用登录会话选择分组和模型，并复用统一的分流、协议转换、计费和重试链路。 |
+| 文本补全 | `POST /v1/completions` | 传统文本补全接口，要求提供 `prompt` 和 `model`。 |
+| 向量嵌入 | `POST /v1/embeddings` | 将文本或文本数组转换为向量，要求提供 `input`，由渠道适配器转换为上游格式。 |
+| Gemini 嵌入兼容接口 | `POST /v1/engines/{model}/embeddings` | 兼容旧版 Gemini 风格的嵌入路径，根据 URL 中的模型名处理嵌入请求。 |
+| 图像生成 | `POST /v1/images/generations` | 根据提示词生成图像，具体模型、尺寸、质量和数量取决于请求参数及已配置渠道。 |
+| 图像编辑 | `POST /v1/images/edits` | 根据输入图像和提示词进行图像编辑，支持 JSON 和 `multipart/form-data` 请求。 |
+| 旧版编辑接口 | `POST /v1/edits` | 保留的兼容路径，代码进入图像 Relay 处理；新客户端建议优先使用 `/v1/images/edits`。 |
+| 语音转文字 | `POST /v1/audio/transcriptions` | 将音频转换为文字，按照 OpenAI 音频接口格式转发到对应语音识别渠道。 |
+| 音频翻译 | `POST /v1/audio/translations` | 识别音频内容并输出翻译后的文字。 |
+| 文字转语音 | `POST /v1/audio/speech` | 将输入文本转换为音频。 |
+| 重排序 | `POST /v1/rerank` | 根据 `query` 对候选 `documents` 进行相关性排序，要求查询内容和文档列表不为空。 |
+| 内容审核 | `POST /v1/moderations` | 对文本或其他输入执行内容审核；未提供模型时会使用默认审核模型候选。 |
+| Responses API | `POST /v1/responses` | OpenAI Responses 格式接口，支持输入、工具和响应事件等能力。 |
+| Responses 压缩 | `POST /v1/responses/compact` | 对 Responses 请求上下文执行压缩处理。 |
+| Codex 网页搜索 | `POST /v1/alpha/search` | Codex 独立网页搜索格式接口，目前仅允许支持该能力的 Sub2API、New API、Codex 和高级自定义渠道处理。 |
+| Claude Messages | `POST /v1/messages` | Anthropic Claude Messages 兼容接口，要求提供 `model` 和消息内容，必要时由 New API 转换为上游协议。 |
+| 实时对话 | `GET /v1/realtime`（WebSocket） | OpenAI Realtime 风格的双向实时通信接口，模型通常通过查询参数传入，API 密钥可通过 Bearer Token 或 WebSocket 子协议传递。 |
+| Gemini 原生模型调用 | `POST /v1beta/models/{model}:{action}` | Gemini 原生格式接口，支持模型操作路径，例如 `generateContent`、`streamGenerateContent` 和嵌入相关操作。 |
+| Gemini 兼容模型调用 | `POST /v1/models/{model}:{action}` | 以 `/v1` 前缀承接 Gemini 风格的模型操作请求，由 Gemini Relay 负责解析和转换。 |
+| 模型列表 | `GET /v1/models` | 默认返回 OpenAI 格式模型列表；使用 Anthropic 请求头时返回 Claude 格式，使用 `x-goog-api-key` 或 `key` 查询参数时返回 Gemini 格式。 |
+| 模型详情 | `GET /v1/models/{model}` | 查询单个模型信息；模型不存在时返回 `model_not_found` 错误对象。 |
+| Gemini 模型列表 | `GET /v1beta/models` | 以 Gemini 格式返回可用模型列表，响应字段包括 `models` 和 `nextPageToken`。 |
+| OpenAI 格式模型列表 | `GET /v1beta/openai/models` | 在 Gemini 兼容命名空间下，以 OpenAI 格式返回模型列表。 |
 
-视频、音乐、Midjourney 等接口可能创建异步任务。主站注册了 OpenAI 兼容视频端点、Kling、Jimeng、Suno 和 Midjourney 等路径；只有配置了对应渠道时才可用。请求返回任务标识后，到绘图日志或任务日志查看进度、结果和错误。
-
-<Callout type="info">
-  API 请求的实际计费、模型可用性、速率限制和参数兼容性由管理员的渠道、模型、分组和系统设置共同决定。
-</Callout>
