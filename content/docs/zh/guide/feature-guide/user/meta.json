@@ -9,9 +9,7 @@
     "api",
     "chat-apps",
     "log",
-    "topup",
-    "subscription",
-    "pricing",
-    "task"
+    "wallet",
+    "pricing"
   ]
 }

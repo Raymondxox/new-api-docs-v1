@@ -1,50 +1,132 @@
 ---
 title: 聊天应用集成
-description: 手动配置兼容客户端，或使用管理员提供的聊天预设打开网页、桌面协议和浏览器扩展。
+description: 使用统一 API 地址手动配置兼容客户端，或通过聊天预设快速打开网页、桌面协议和浏览器扩展。
 ---
 
 import { Callout } from 'fumadocs-ui/components/callout';
 
-New API 对外提供统一的 API 地址。不同客户端的字段名称可能不同，但通常都需要填写 Base URL、API Key 和模型名称。
+New API 的聊天集成有两种方式：在客户端手动填写接口信息，或使用 Root 配置的聊天预设快速打开目标应用。聊天预设只是连接入口，不会增加账号可用的模型、分组或额度。
 
-## 控制台聊天预设
+## 使用前准备
 
-Root 可以在「系统设置 → 控制台内容 → 聊天」维护预设。预设会出现在侧边栏「聊天」子菜单和 API 密钥行菜单中：
+1. 登录 New API，并在「API 密钥」页面创建一个密钥。
+2. 确认密钥处于启用状态，未过期、未超额，并且当前 IP、分组和模型限制允许本次调用。
+3. 准备一个平台已公开的模型名称。可以在「模型广场」或 `GET /v1/models` 返回的模型列表中确认名称。
 
-- `http://` 或 `https://` 链接在控制台的 `/chat/{id}` 页面中打开；兼容入口 `/chat2link` 会使用第一个网页预设
-- 自定义协议会交给已安装的桌面应用
-- `fluent` 类型会尝试把密钥发送给 FluentRead 浏览器扩展
+API 密钥和模型限制由实例管理员配置。创建密钥的具体步骤请参阅[API 密钥](/zh/docs/guide/feature-guide/user/token)页面。
 
-预设模板可以使用 `{address}` 和 `{key}`，也支持 Cherry Studio、AionUi、DeepChat 的编码配置占位符。需要密钥的预设会读取用户选中的完整 API 密钥；`/chat2link` 使用第一个已启用密钥，没有可用密钥时会跳转到 `/keys`。
+## 手动配置兼容客户端
+
+只要客户端支持自定义 OpenAI 兼容接口，通常可以按以下信息配置：
+
+| 配置项 | 填写内容 |
+| --- | --- |
+| Base URL | 实例公开地址加 `/v1`，例如 `https://api.example.com/v1` |
+| API Key | 「API 密钥」页面中的完整密钥 |
+| Model | 平台公开且当前密钥允许使用的模型名称 |
+
+客户端若会自动拼接 `/chat/completions`，Base URL 填到 `/v1` 即可；如果客户端要求完整端点，则使用 `https://api.example.com/v1/chat/completions`。不要重复拼接 `/v1`。
+
+例如，OpenAI Chat Completions 请求可以写成：
+
+```bash
+curl https://api.example.com/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer sk-your-api-key" \
+  -d '{"model":"<model-name>","messages":[{"role":"user","content":"你好"}]}'
+```
+
+除 OpenAI Chat Completions 外，项目还提供以下兼容路径。客户端是否支持这些路径取决于客户端本身：
+
+| 协议或能力 | 路径与认证提示 |
+| --- | --- |
+| OpenAI 文本补全 | `POST /v1/completions`，使用 `Authorization: Bearer <API_KEY>` |
+| OpenAI Responses | `POST /v1/responses`，使用 `Authorization: Bearer <API_KEY>` |
+| Claude Messages | `POST /v1/messages`，使用 Claude 请求体，并按客户端要求发送 `x-api-key` |
+| Gemini 原生接口 | `POST /v1beta/models/{model}:{action}` 或 `POST /v1/models/{model}:{action}`，可使用 `x-goog-api-key` 或 `key` 查询参数 |
+| 模型列表 | `GET /v1/models`；Gemini 原生列表也支持 `GET /v1beta/models`。请求同样需要 API 密钥；Gemini 可使用 `key` 查询参数或 `x-goog-api-key` |
+
+Claude 和 Gemini 原生协议的请求字段、路径和响应格式与 OpenAI 不完全相同，不能只替换 Base URL 后就假定全部兼容。更多端点和请求示例请参阅[使用 API 与游乐场](/zh/docs/guide/feature-guide/user/api)。
+
+## 聊天预设
+
+Root 可以在「系统设置 → 控制台内容 → 聊天」维护聊天预设。普通用户只能使用实例当前配置的预设，不能在用户页面编辑预设。
+
+预设保存为 JSON 数组，每个数组元素必须是只包含一个键值对的对象：键是显示名称，值是 URL 或协议字符串。例如：
+
+```json
+[
+  {"我的网页聊天": "https://chat.example.com/?address={address}&key={key}"},
+  {"我的桌面客户端": "myclient://import?key={key}"},
+  {"我的 FluentRead": "fluentread"}
+]
+```
+
+预设 URL 会按前缀分为三类：
+
+| 类型 | 识别方式 | 打开行为 |
+| --- | --- | --- |
+| 网页预设 | 以 `http://` 或 `https://` 开头 | 从侧边栏进入控制台的 `/chat/{id}` 页面，并在 iframe 中加载网页；目标站点若禁止被嵌入，页面可能无法显示 |
+| FluentRead | 以 `fluent` 开头，例如 `fluentread` | 不打开 URL，而是尝试向已安装且已激活的 FluentRead 浏览器扩展发送预填配置；该入口只在 API 密钥行菜单中提供 |
+| 自定义协议 | 其他非 HTTP(S)、非 FluentRead 字符串 | 通过浏览器尝试打开已注册该协议的桌面应用或其他外部应用 |
+
+无效的 JSON 项、空 URL 或包含多个键的对象不会被前端解析为可用预设。Root 修改后，预设会通过状态接口提供给控制台前端。
+
+## 源码默认预设
+
+以下是源码中的默认预设名称。Root 可以完全替换这组配置，因此实际实例显示的名称和数量可能不同。
+
+| 预设 | 类型 | 说明 |
+| --- | --- | --- |
+| Cherry Studio | 自定义协议 | 使用 `{cherryConfig}` 生成导入配置 |
+| AionUI | 自定义协议 | 使用 `{aionuiConfig}` 生成导入配置 |
+| 流畅阅读 | FluentRead 扩展 | 使用 API 密钥行菜单尝试向浏览器扩展发送预填配置；密钥前缀兼容性以扩展实际行为为准 |
+| CC Switch | 自定义协议 | 使用 `ccswitch` 协议打开 CC Switch；如需为指定密钥配置，请使用 API 密钥行中的独立「CC Switch」操作 |
+| DeepChat | 自定义协议 | 使用 `{deepchatConfig}` 生成导入配置 |
+| Lobe Chat 官方示例 | 网页预设 | 在控制台 iframe 中打开官方示例地址 |
+| AI as Workspace | 网页预设 | 在控制台 iframe 中打开配置地址 |
+| AMA 问天 | 自定义协议 | 使用实例地址和 API 密钥拼接协议链接 |
+| OpenCat | 自定义协议 | 使用实例地址和 API 密钥拼接协议链接 |
+
+Chatbox、ChatGPT Next Web 等客户端不属于当前源码默认预设。它们仍可在支持自定义 OpenAI 兼容地址时手动配置，但不会因此获得 New API 专用的一键入口。
+
+## 从控制台打开预设
+
+### 侧边栏「聊天」
+
+- 侧边栏会显示所有网页预设和自定义协议预设；FluentRead 不显示在此列表中。
+- 点击网页预设后，控制台进入 `/chat/{id}` 并在 iframe 中加载目标网页。
+- 点击自定义协议预设后，浏览器会尝试在新窗口中启动已安装的外部应用。
+
+### API 密钥行菜单
+
+在「API 密钥」页面打开某一行的菜单，进入「聊天」子菜单，可以使用该行对应的密钥打开全部已配置预设，包括 FluentRead。打开任一预设前，系统都会读取该行密钥的完整值；网页预设也会在新窗口打开，不会进入侧边栏的 `/chat/{id}` iframe。这里使用的是当前选中行的密钥，与侧边栏预设使用的第一个启用密钥不是同一选择逻辑。已禁用的密钥也可能被读取并生成链接，但后续调用会被服务端拒绝。
+
+### 兼容入口 `/chat2link`
+
+`/chat2link` 只会使用配置中的第一个网页预设，并尝试用当前账号前 50 个令牌中按接口顺序找到的第一个启用令牌生成链接。没有网页预设时无法通过此入口打开；没有可用的启用令牌时会提示并跳转到「API 密钥」页面。若配置中没有任何可用预设，页面可能保持加载状态。
+
+## 预设占位符
+
+| 占位符 | 替换规则 |
+| --- | --- |
+| `{address}` | 优先使用 `/api/status` 返回的系统实例地址；替换前会进行 URL 编码，未配置时回退到当前站点的 origin（协议、域名和端口，不包含页面路径）。不会自动追加 `/v1`。 |
+| `{key}` | 使用完整 API 密钥，并规范化为 `sk-` 前缀。 |
+| `{cherryConfig}` | 生成并 URL 编码 Base64 配置，内容包含 `id: "new-api"`、`baseUrl` 和 `apiKey`。 |
+| `{aionuiConfig}` | 生成并 URL 编码 Base64 配置，内容包含 `platform: "new-api"`、`baseUrl` 和 `apiKey`。 |
+| `{deepchatConfig}` | 生成并 URL 编码 Base64 配置，内容包含 `id: "new-api"`、`baseUrl` 和 `apiKey`。 |
+
+三种 `*Config` 占位符会把解析出的实例地址写入 `baseUrl`，不会自动追加 `/v1`。如果目标应用要求以 `/v1` 结尾，应按该应用的配置说明补充路径。侧边栏中需要密钥的网页或外部预设，以及 `/chat2link`，会尝试获取当前账号的启用密钥；API 密钥行菜单则使用当前选中行的密钥。只有 `{key}`、`{cherryConfig}`、`{aionuiConfig}` 和 `{deepchatConfig}` 会触发控制台自动获取并替换密钥，其他自定义占位符不会被识别。
 
 <Callout type="warn">
-  打开带密钥的预设会把完整 API 密钥交给目标网页、应用或扩展。只使用实例管理员确认过的可信预设；怀疑泄露时立即禁用或删除该密钥。
+  预设可能把完整 API 密钥放入网页 URL、桌面协议参数或浏览器扩展事件中。只使用实例管理员确认过的可信预设；不要把包含密钥的链接复制到聊天、工单或日志中。怀疑泄露时，请立即在「API 密钥」页面禁用、删除或重新创建该密钥。
 </Callout>
 
-## 通用配置
+## 常见问题
 
-| 字段 | 填写内容 |
-| --- | --- |
-| Base URL | 实例地址加 `/v1`，例如 `https://api.example.com/v1` |
-| API Key | 在控制台“API 密钥”创建的密钥 |
-| Model | 管理员已在渠道中暴露的模型名称 |
-
-### 配置步骤
-
-1. 在 New API 创建 API 密钥并确认额度和模型限制。
-2. 在聊天应用中选择 OpenAI 兼容接口。
-3. 填写 Base URL、API Key 和模型名称。
-4. 发送一条短消息验证返回结果。
-
-## 常见客户端
-
-只要客户端允许自定义 OpenAI 兼容 Base URL、API Key 和模型名称，通常就能接入。LobeChat、ChatGPT Next Web 等客户端的具体菜单名称和路径由客户端版本决定，New API 不保证第三方客户端的所有扩展参数都兼容。
-
-### 连接失败排查
-
-- 确认 Base URL 没有重复的 `/v1`。
-- 确认 API Key 未过期、未超额且允许当前 IP。
-- 确认模型名称与 New API 中展示的名称完全一致。
-- 如果客户端自动拼接 `/chat/completions`，Base URL 应填写到 `/v1`；如果要求完整端点，则按客户端说明填写。
-- Claude 或 Gemini 原生客户端需要对应协议路径和请求头，不能一律按 OpenAI 配置处理。
-- 查看“使用日志”中的状态码、渠道和错误信息。
+- **侧边栏没有聊天预设**：请联系 Root 确认 `Chats` 配置是合法 JSON 数组，并确认侧边栏中的「聊天」模块已启用。调整数组顺序会改变 `/chat/{id}` 中的预设 ID。
+- **提示没有可用密钥**：创建或启用 API 密钥，并检查额度、过期时间、模型限制和 IP 白名单。
+- **桌面应用没有启动**：先安装目标应用，并确认操作系统已注册对应的自定义协议；浏览器可能还会要求确认是否打开外部应用。
+- **网页预设空白或拒绝加载**：目标站点可能通过 CSP 或 `X-Frame-Options` 禁止 iframe。此时改用该应用的手动配置方式。
+- **FluentRead 连接后密钥无效**：确认扩展已安装并在当前页面激活；当前版本可能存在密钥前缀兼容差异，仍失败时改用手动配置或其他预设。
+- **请求返回未授权或禁止访问**：检查认证头格式、模型名称、密钥状态、分组权限和 IP 限制；Claude、Gemini 请求还要确认使用了对应的路径和请求头。
