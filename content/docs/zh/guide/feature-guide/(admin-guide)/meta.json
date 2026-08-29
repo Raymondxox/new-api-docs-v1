@@ -1,0 +1,12 @@
+{
+  "title": "管理员指南",
+  "defaultOpen": false,
+  "pages": [
+    "../admin/channel",
+    "../admin/model",
+    "../admin/user",
+    "../admin/redemption",
+    "../admin/subscription",
+    "../admin/system-info"
+  ]
+}
