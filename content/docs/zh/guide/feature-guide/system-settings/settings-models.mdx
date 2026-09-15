@@ -5,9 +5,11 @@ description: Root 配置全局模型行为、路由可靠性、供应商适配�
 
 import { Callout } from 'fumadocs-ui/components/callout';
 
-模型与路由配置位于 `/system-settings/models`，仅 Root 可访问。页面包含「全局模型配置」「路由可靠性」「Gemini」「Claude」「Grok」「渠道亲和」和「模型部署」七个分区，默认进入「全局模型配置」。
+模型与路由配置位于 `/system-settings/models`，仅 Root 可访问。
 
-本页负责实例级的模型协议适配、重试和可靠性策略。渠道的模型列表、模型映射、优先级、权重、自动禁用开关和上游凭证仍在[渠道管理](/zh/docs/guide/feature-guide/admin/channel)中配置；模型目录信息与部署管理入口参见[模型管理](/zh/docs/guide/feature-guide/admin/model)。
+## 模型与路由配置简介
+
+该工作区包含「全局模型配置」「路由可靠性」「Gemini」「Claude」「Grok」「渠道亲和」和「模型部署」七个分区。负责实例级的模型协议适配、重试和可靠性策略。
 
 | 分区 | 入口 | 主要用途 |
 | --- | --- | --- |
@@ -19,50 +21,22 @@ import { Callout } from 'fumadocs-ui/components/callout';
 | [渠道亲和](#渠道亲和) | `/system-settings/models/channel-affinity` | 按请求标识复用上次成功渠道。 |
 | [模型部署](#ionet-模型部署) | `/system-settings/models/model-deployment` | io.net 托管部署的开关与凭证。 |
 
-## 保存与生效边界
+## 配置分区
 
-多数分区只提交发生变化的配置项，并按键逐项保存，不是整页原子提交。一次保存中如果后续字段失败，前面已经成功的字段不会自动回滚。下面各表的「默认值」指程序初始值，不代表当前实例的已保存配置。
+模型与路由域下有七个独立分区：
 
-1. 修改前记录原值，并确认修改的是当前实例。
-2. 修改字段后点击该分区的保存按钮，检查成功或失败提示；保存成功只表示配置写入，不代表上游链路可用。
-3. 保存后刷新页面核对非敏感字段，再用测试 Token、指定模型和小流量请求验证。
-4. 需要回滚时手动填写原值保存。本页没有配置快照或一键回滚。
+### 全局模型配置
 
-名称以 `Key`、`Secret`、`Token` 或 `api_key` 结尾的敏感选项不会通过通用设置接口回显，例如 io.net API Key。更换密钥时输入新值；留空通常表示本次不更新已有密钥。
+- 请求透传
 
-状态码类字段统一接受逗号分隔的单个状态码或闭区间（例如 `401,403,429,500-503`），允许全角逗号。页面会合并重叠区间并显示归一化结果，取值范围为 `100–599`；含有非法片段时表单拒绝保存。
+启用后，Relay 会在相关协议链路中把客户端原始请求体直接发送给上游，跳过许多请求体转换、字段移除、系统提示词合并和参数覆盖步骤。
 
-<Callout type="warn">
-  请求透传、重试、自动禁用和亲和规则会直接改变生产流量。不要只根据“保存成功”判断配置可用；应使用测试 Token、指定模型和可观测的渠道日志完成小流量验证。
+<Callout type="info">
+- 分别发送一次非流式请求和一次流式请求，检查上游是否识别全部字段。
+- 对比开启前后的模型映射、用量统计和错误响应。
 </Callout>
 
-## 全局模型配置
-
-### 请求透传
-
-<div className="[&_table]:min-w-[48rem] [&_td:first-child]:whitespace-nowrap [&_th]:whitespace-nowrap">
-
-| 页面字段 | 配置键 | 默认值 | 校验与范围 | 影响范围 | 备注 |
-| --- | --- | --- | --- | --- | --- |
-| 启用请求透传 | `global.pass_through_request_enabled` | `false` | 布尔 | 所有适用渠道的请求体转换 | 渠道自身还可独立开启请求体透传。 |
-
-</div>
-
-启用后，Relay 会在相关协议链路中把客户端原始请求体直接发送给上游，跳过许多请求体转换、字段移除、系统提示词合并和参数覆盖步骤。它不会绕过身份验证、额度检查、渠道选择、计费和日志，也不是透明 TCP 代理。
-
-**操作流程**
-
-1. 确认客户端请求格式与目标上游完全兼容。
-2. 打开开关并保存。
-3. 分别发送一次非流式请求和一次流式请求，检查上游是否识别全部字段。
-4. 对比开启前后的模型映射、用量统计和错误响应。
-
-**注意事项**
-
-- 上游可能不识别原样透传的字段，表现为参数被忽略或直接报错。
-- 全局请求透传或渠道级透传开启时，ChatCompletions → Responses 转换和供应商适配链路会被跳过。
-
-### 保留 Thinking 后缀的模型
+- 保留 Thinking 后缀的模型
 
 <div className="[&_table]:min-w-[48rem] [&_td:first-child]:whitespace-nowrap [&_th]:whitespace-nowrap">
 
@@ -89,7 +63,7 @@ import { Callout } from 'fumadocs-ui/components/callout';
   后端还存在未在本页提供控件的 `global.effort_tail_model_ids`（内置 5 个模型 ID）。它用于标记名称本身以推理等级单词结尾、又处在推理模型白名单内的真实模型 ID，只能通过配置文件或接口调整。
 </Callout>
 
-### ChatCompletions → Responses
+- ChatCompletions → Responses
 
 <div className="[&_table]:min-w-[48rem] [&_td:first-child]:whitespace-nowrap [&_th]:whitespace-nowrap">
 
@@ -118,7 +92,7 @@ import { Callout } from 'fumadocs-ui/components/callout';
 - 全局请求透传或目标渠道的请求体透传开启时不会进入该转换链路。
 - 先限定少量渠道和模型验证工具调用、流式输出、用量统计和错误响应，再逐步扩大范围。
 
-### 流式 Keep-alive Ping
+- 流式 Keep-alive Ping
 
 <div className="[&_table]:min-w-[48rem] [&_td:first-child]:whitespace-nowrap [&_th]:whitespace-nowrap">
 
@@ -143,9 +117,9 @@ import { Callout } from 'fumadocs-ui/components/callout';
 
 ![全局模型配置分区](/assets/guide/feature-guide/system-settings-models-and-routing-global-model-configuration.png)
 
-## 路由可靠性
+### 路由可靠性
 
-### 请求重试
+- 请求重试
 
 <div className="[&_table]:min-w-[48rem] [&_td:first-child]:whitespace-nowrap [&_th]:whitespace-nowrap">
 
@@ -171,7 +145,7 @@ import { Callout } from 'fumadocs-ui/components/callout';
 - 重试次数增大会放大上游压力和计费前的等待时间；先确认渠道池有可用备选。
 - 把 `2xx` 加入集合、或删除某个区间，会改变所有模型的行为，不能只按单个渠道预期效果。
 
-### 自动禁用
+- 自动禁用
 
 <div className="[&_table]:min-w-[48rem] [&_td:first-child]:whitespace-nowrap [&_th]:whitespace-nowrap">
 
@@ -192,7 +166,7 @@ import { Callout } from 'fumadocs-ui/components/callout';
 - 阈值单位是秒，但比较使用毫秒精度；填 `0` 等价于关闭该维度。
 - 自动禁用会改变流量分布，批量禁用后应先确认剩余渠道容量。
 
-### 自动恢复与计划测试
+- 自动恢复与计划测试
 
 <div className="[&_table]:min-w-[48rem] [&_td:first-child]:whitespace-nowrap [&_th]:whitespace-nowrap">
 
@@ -227,7 +201,7 @@ import { Callout } from 'fumadocs-ui/components/callout';
 
 ![路由可靠性分区](/assets/guide/feature-guide/system-settings-models-and-routing-routing-reliability.png)
 
-## Gemini
+### Gemini
 
 Gemini 分区控制 Gemini 和部分 Vertex 转换链路使用的实例级默认行为。
 
@@ -255,7 +229,7 @@ Gemini 分区控制 Gemini 和部分 Vertex 转换链路使用的实例级默认
 
 ![Gemini 分区](/assets/guide/feature-guide/system-settings-models-and-routing-gemini.png)
 
-## Claude
+### Claude
 
 <div className="[&_table]:min-w-[48rem] [&_td:first-child]:whitespace-nowrap [&_th]:whitespace-nowrap">
 
@@ -289,7 +263,7 @@ Gemini 分区控制 Gemini 和部分 Vertex 转换链路使用的实例级默认
 
 ![Claude 分区](/assets/guide/feature-guide/system-settings-models-and-routing-claude.png)
 
-## Grok
+### Grok
 
 <div className="[&_table]:min-w-[48rem] [&_td:first-child]:whitespace-nowrap [&_th]:whitespace-nowrap">
 
@@ -310,9 +284,9 @@ Gemini 分区控制 Gemini 和部分 Vertex 转换链路使用的实例级默认
 
 ![Grok 分区](/assets/guide/feature-guide/system-settings-models-and-routing-grok.png)
 
-## 渠道亲和
+### 渠道亲和性
 
-渠道亲和会根据请求中的稳定标识复用最近一次成功的渠道，适合会话缓存、CLI 线程或需要保持上游状态的请求。
+渠道亲和性会根据请求中的稳定标识复用最近一次成功的渠道，适合会话缓存、CLI 线程或需要保持上游状态的请求。
 
 <div className="[&_table]:min-w-[48rem] [&_td:first-child]:whitespace-nowrap [&_th]:whitespace-nowrap">
 
@@ -327,7 +301,7 @@ Gemini 分区控制 Gemini 和部分 Vertex 转换链路使用的实例级默认
 
 </div>
 
-### 匹配顺序
+- 匹配顺序
 
 规则按列表顺序检查。第一条同时满足模型、路径、User-Agent、Key 来源和值正则的规则会建立本次亲和上下文；即使该规则当前没有缓存命中，也不会继续尝试后面的规则，因此应把更具体的规则放在前面。
 
@@ -342,13 +316,13 @@ Gemini 分区控制 Gemini 和部分 Vertex 转换链路使用的实例级默认
 
 规则编辑器还包含「失败后不重试」「User-Agent include」「Value 正则」「参数覆盖模板（JSON）」「包含分组 / 包含模型 / 包含规则名」等高级设置。参数覆盖模板必须是 JSON 对象。
 
-### 缓存键与隔离
+- 缓存键与隔离
 
 「包含分组」「包含模型名」「包含规则名」只决定这些字段是否加入缓存键。关闭某项会扩大复用范围，也可能使不同分组、模型或规则共用同一个 Key，因此修改前应确认隔离要求。
 
 启用 Redis 时亲和缓存可在连接同一 Redis 的实例间共享；未启用时使用当前进程内存缓存，多实例之间不共享，超出最大条目数后按 LRU 淘汰。
 
-### 渠道可用性与重试
+- 渠道可用性与重试
 
 命中缓存后，系统仍会检查渠道是否启用、是否支持当前模型和分组，以及高级自定义渠道是否支持当前请求路径。缓存渠道不可用时：
 
@@ -357,7 +331,7 @@ Gemini 分区控制 Gemini 和部分 Vertex 转换链路使用的实例级默认
 
 「失败后不重试」只在本次确实使用了亲和缓存渠道后生效。
 
-### 缓存操作与模板
+- 缓存操作与模板
 
 页面提供模板入口（Codex CLI、Claude CLI）和「填充模板」按钮，模板会预填模型正则、路径、Key 来源和请求头透传参数，但只是可编辑的起点。
 
@@ -380,7 +354,7 @@ Gemini 分区控制 Gemini 和部分 Vertex 转换链路使用的实例级默认
 
 ![添加亲和规则](/assets/guide/feature-guide/system-settings-models-and-routing-channel-affinity-add-rule.png)
 
-## io.net 模型部署
+### 模型部署
 
 <div className="[&_table]:min-w-[48rem] [&_td:first-child]:whitespace-nowrap [&_th]:whitespace-nowrap">
 
