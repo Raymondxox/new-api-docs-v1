@@ -5,13 +5,15 @@ import {
   DocsPage,
   DocsTitle,
 } from 'fumadocs-ui/page';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { getMDXComponents } from '@/mdx-components';
 import type { Metadata } from 'next';
 import { createRelativeLink } from 'fumadocs-ui/mdx';
 import { Feedback } from '@/components/feedback';
 import { LLMCopyButton, ViewOptions } from '@/components/page-actions';
 import { onRateAction } from '@/lib/github';
+import { i18n } from '@/lib/i18n';
+import { createPageMetadata } from '@/lib/metadata';
 
 // GitHub repository info for source links
 const owner = 'QuantumNous';
@@ -23,6 +25,13 @@ export default async function Page(props: {
 }) {
   const { slug, lang } = await props.params;
   const page = source.getPage(slug, lang);
+  if (
+    !page &&
+    lang !== 'zh' &&
+    slug?.[0] === 'plugins' &&
+    source.getPage(slug, 'zh')
+  )
+    redirect(`/${lang}/docs`);
   if (!page) notFound();
 
   const MDX = page.data.body as any;
@@ -67,7 +76,17 @@ export default async function Page(props: {
 }
 
 export async function generateStaticParams() {
-  return source.generateParams();
+  const params = source.generateParams();
+  // Pre-render fallbacks without adding untranslated pages to navigation or search.
+  for (const page of source.getPages('zh')) {
+    if (page.slugs[0] !== 'plugins') continue;
+    for (const lang of i18n.languages) {
+      if (lang !== 'zh' && !source.getPage(page.slugs, lang)) {
+        params.push({ lang, slug: page.slugs });
+      }
+    }
+  }
+  return params;
 }
 
 export async function generateMetadata(props: {
@@ -75,11 +94,24 @@ export async function generateMetadata(props: {
 }): Promise<Metadata> {
   const { slug, lang } = await props.params;
   const page = source.getPage(slug, lang);
+  // The page owns redirects for translations that are not available yet.
+  if (
+    !page &&
+    lang !== 'zh' &&
+    slug?.[0] === 'plugins' &&
+    source.getPage(slug, 'zh')
+  )
+    return {};
   if (!page) notFound();
 
-  return {
+  return createPageMetadata({
+    lang,
+    path: ['docs', ...page.slugs].join('/'),
     title: page.data.title,
     description: page.data.description,
-    openGraph: { images: getPageImage(page).url },
-  };
+    languages: i18n.languages.filter(
+      (language) => !!source.getPage(page.slugs, language)
+    ),
+    image: getPageImage(page).url,
+  });
 }

@@ -10,6 +10,10 @@
     "postinstall": "fumadocs-mdx",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "test:plugins": "node --import tsx --test tests/plugins/*.test.ts",
+    "test:community:browser": "playwright test --config playwright.community.config.ts",
+    "test:seo:browser": "playwright test --config playwright.seo.config.ts",
+    "test:plugins:browser": "playwright test --config playwright.plugins.config.ts",
     "translate": "bun scripts/translate-docs.ts",
     "translate:all": "bun scripts/translate-docs.ts",
     "translate:force": "bun run translate",
@@ -49,6 +53,7 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4.1.16",
     "@types/mdx": "^2.0.13",
     "@types/node": "^24.10.0",
