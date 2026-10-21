@@ -106,10 +106,15 @@ export function createMetadata(override: Metadata): Metadata {
   return {
     metadataBase: baseUrl,
     ...override,
+    // favicon.ico has no margin, for browser tabs; the PNGs keep one because Google shows the
+    // largest icon cropped to a circle. No SVG icon: browsers would pick it for tabs too.
+    // Icons live under /assets/ (or are favicon.ico) so the i18n middleware leaves them alone.
     icons: {
-      icon: '/favicon.ico',
-      shortcut: '/favicon.ico',
-      apple: '/assets/logo.png',
+      icon: [
+        { url: '/favicon.ico', sizes: '48x48' },
+        { url: '/assets/icon-192.png', sizes: '192x192', type: 'image/png' },
+      ],
+      apple: { url: '/assets/apple-touch-icon.png', sizes: '180x180' },
     },
     openGraph: {
       title: override.title ?? undefined,
