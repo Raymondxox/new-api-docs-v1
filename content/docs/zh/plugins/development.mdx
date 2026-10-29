@@ -110,7 +110,7 @@ export function extractUsage(ctx) {
 ## 生命周期与数据
 
 1. 宿主认证并选择渠道，将标准化请求传给 `buildSubmitRequest`。
-2. 宿主验证描述符的 URL，发送 HTTP 请求，再调用 `parseSubmitResponse`。
+2. 宿主验证描述符的 URL 并发送 HTTP 请求。上游所有 2xx 响应（包括 `201`、`202`）的状态码、响应头和响应体都会传给 `parseSubmitResponse`；其他状态码会在钩子执行前使提交失败。
 3. 插件返回上游任务 ID 和可持久化数据；宿主生成公开任务 ID 并保存任务。
 4. 宿主周期性调用 `buildQueryRequest` 和 `parseTaskResult`，直到任务终态或失败清理。
 5. 宿主读取用量事实，按保存的计费配置完成结算。
@@ -118,6 +118,8 @@ export function extractUsage(ctx) {
 `TaskQueryContext.taskId` 是上游 ID，`publicTaskId` 是 New API 公开 ID；轮询上下文没有 `requestBody`。需要跨轮询保留的数据使用 `state`，不能依赖模块全局变量。
 
 `Task.Data` 保存最近一次上游快照；每轮成功解析会更新它。未知状态返回 `UNKNOWN`，不要默认成 `IN_PROGRESS`，否则异常任务可能持续占用资源。
+
+将钩子参数及其嵌套值视为只读，显式返回更新后的值；需要可修改副本时，声明 `json-clone@1` 并使用 `utils.json.clone`。不要在模块全局变量中保留请求参数。可选用量钩子和产物钩子必须在加载时就已定义，详见[钩子参数与返回值](/zh/docs/plugins/api-reference#钩子参数与返回值)。
 
 ## 编译与 fixture 测试
 

@@ -110,7 +110,7 @@ This example submits via the generic interface `POST /v1/tasks/demo-task`, with 
 ## Lifecycle and Data
 
 1. The host authenticates and selects a channel, then passes the standardized request to `buildSubmitRequest`.
-2. The host validates the descriptor's URL, sends an HTTP request, and then calls `parseSubmitResponse`.
+2. The host validates the descriptor's URL and sends an HTTP request. Every upstream 2xx response, including `201` and `202`, is passed to `parseSubmitResponse` with its status, headers, and body; other statuses fail submission before the hook runs.
 3. The plugin returns the upstream task ID and persistent data; the host generates a public task ID and saves the task.
 4. The host periodically calls `buildQueryRequest` and `parseTaskResult` until the task reaches a final state or is cleaned up due to failure.
 5. The host reads usage facts and completes billing according to the saved billing configuration.
@@ -118,6 +118,8 @@ This example submits via the generic interface `POST /v1/tasks/demo-task`, with 
 `TaskQueryContext.taskId` is the upstream ID, and `publicTaskId` is the New API public ID; the polling context does not have `requestBody`. Data that needs to be preserved across polls should use `state` and should not rely on module global variables.
 
 `Task.Data` saves the most recent upstream snapshot; it is updated with each successful parsing round. Unknown statuses should return `UNKNOWN`, not default to `IN_PROGRESS`, otherwise abnormal tasks might continuously occupy resources.
+
+Treat hook arguments and nested values as read-only. Return updated values explicitly, use `utils.json.clone` with `json-clone@1` for a mutable copy, and never keep request arguments in module globals. Optional usage and artifact hooks must already be defined at load time. See [hook arguments and results](/en/docs/plugins/api-reference#hook-arguments-and-results).
 
 ## Compilation and Fixture Testing
 
